@@ -1,0 +1,66 @@
+.root-pane {
+    -fx-background-color: linear-gradient(to bottom right, #161b22, #0f1117);
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+.panel {
+    -fx-background-color: rgba(30, 35, 45, 0.88);
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: rgba(105, 125, 155, 0.25);
+}
+
+.app-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #f0f6fc;
+}
+
+.subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #9da9bb;
+}
+
+.file-label, .status {
+    -fx-text-fill: #c4d1e3;
+    -fx-font-size: 13px;
+}
+
+.button {
+    -fx-background-radius: 10;
+    -fx-padding: 10 14;
+    -fx-cursor: hand;
+    -fx-text-fill: #e6edf3;
+}
+
+.button.primary {
+    -fx-background-color: #2f81f7;
+}
+
+.button.accent {
+    -fx-background-color: #238636;
+}
+
+.section-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: 650;
+    -fx-text-fill: #f0f6fc;
+}
+
+.text-area, .list-view {
+    -fx-control-inner-background: #0f1620;
+    -fx-background-color: #0f1620;
+    -fx-text-fill: #dce6f5;
+    -fx-border-color: #2c3a4f;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.list-cell {
+    -fx-background-color: #0f1620;
+    -fx-text-fill: #dce6f5;
+}
+
+.progress-indicator {
+    -fx-progress-color: #2f81f7;
+}
