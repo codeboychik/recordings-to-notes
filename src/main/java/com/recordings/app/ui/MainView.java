@@ -5,107 +5,153 @@ import com.recordings.app.service.OpenAiSummarizationService;
 import com.recordings.app.service.OpenAiTranscriptionService;
 import com.recordings.app.service.RecordingPipeline;
 import com.recordings.app.service.VideoAudioExtractor;
-import javafx.application.Platform;
-import javafx.concurrent.Task;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.TextArea;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingWorker;
+import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.io.File;
 import java.nio.file.Path;
+import java.util.List;
 
-public class MainView {
+public class MainView extends JFrame {
 
-    private final Stage stage;
-    private final Label selectedFileLabel = new Label("No MP4 selected");
-    private final Label statusLabel = new Label("Ready");
-    private final TextArea summaryArea = new TextArea();
-    private final Label titleLabel = new Label("Summary");
-    private final ListView<String> actionPointsList = new ListView<>();
-    private final ProgressIndicator progressIndicator = new ProgressIndicator();
+    private final JLabel selectedFileLabel = new JLabel("No MP4 selected");
+    private final JLabel statusLabel = new JLabel("Ready");
+    private final JLabel titleLabel = new JLabel("Summary");
+    private final JTextArea summaryArea = new JTextArea();
+    private final DefaultListModel<String> actionPointsModel = new DefaultListModel<>();
+    private final JList<String> actionPointsList = new JList<>(actionPointsModel);
+    private final JProgressBar progressBar = new JProgressBar();
 
     private File selectedFile;
 
-    public MainView(Stage stage) {
-        this.stage = stage;
+    public MainView() {
+        super("Recordings to Notes");
+        setupFrame();
+        buildUi();
     }
 
-    public Parent build() {
-        BorderPane root = new BorderPane();
-        root.getStyleClass().add("root-pane");
+    private void setupFrame() {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setMinimumSize(new Dimension(1080, 720));
+        setSize(1280, 820);
+        setLocationRelativeTo(null);
+    }
 
-        VBox leftPanel = new VBox(14);
-        leftPanel.setPadding(new Insets(24));
-        leftPanel.getStyleClass().add("panel");
+    private void buildUi() {
+        JPanel root = new JPanel(new BorderLayout(14, 14));
+        root.setBorder(new EmptyBorder(16, 16, 16, 16));
 
-        Label appTitle = new Label("Recordings to Notes");
-        appTitle.getStyleClass().add("app-title");
+        JPanel leftPanel = createLeftPanel();
+        JPanel rightPanel = createRightPanel();
 
-        Label subtitle = new Label("MP4 ➝ transcript ➝ concise summary + action points");
-        subtitle.getStyleClass().add("subtitle");
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
+        splitPane.setResizeWeight(0.32);
+        splitPane.setDividerLocation(400);
+        splitPane.setBorder(null);
 
-        Button selectButton = new Button("Choose MP4");
-        selectButton.getStyleClass().add("primary");
-        selectButton.setOnAction(event -> chooseFile());
+        root.add(splitPane, BorderLayout.CENTER);
+        setContentPane(root);
+    }
 
-        Button processButton = new Button("Process Recording");
-        processButton.getStyleClass().add("accent");
-        processButton.setOnAction(event -> processRecording());
+    private JPanel createLeftPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                UIManager.getBorder("Component.border"),
+                new EmptyBorder(18, 18, 18, 18)
+        ));
 
-        progressIndicator.setVisible(false);
-        progressIndicator.setPrefSize(28, 28);
+        JLabel appTitle = new JLabel("Recordings to Notes");
+        appTitle.setFont(appTitle.getFont().deriveFont(28f));
 
-        HBox controls = new HBox(10, selectButton, processButton, progressIndicator);
-        controls.setAlignment(Pos.CENTER_LEFT);
+        JLabel subtitle = new JLabel("MP4 → transcript → concise summary + action points");
 
-        selectedFileLabel.getStyleClass().add("file-label");
-        statusLabel.getStyleClass().add("status");
+        JButton chooseButton = new JButton("Choose MP4");
+        chooseButton.addActionListener(e -> chooseFile());
 
-        leftPanel.getChildren().addAll(appTitle, subtitle, controls, selectedFileLabel, statusLabel);
-        leftPanel.setPrefWidth(420);
+        JButton processButton = new JButton("Process Recording");
+        processButton.addActionListener(e -> processRecording());
 
-        VBox rightPanel = new VBox(12);
-        rightPanel.setPadding(new Insets(24));
-        rightPanel.getStyleClass().add("panel");
+        progressBar.setIndeterminate(true);
+        progressBar.setVisible(false);
 
-        titleLabel.getStyleClass().add("section-title");
+        panel.add(appTitle);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(subtitle);
+        panel.add(Box.createVerticalStrut(16));
+        panel.add(chooseButton);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(processButton);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(progressBar);
+        panel.add(Box.createVerticalStrut(16));
+        panel.add(selectedFileLabel);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(statusLabel);
+        panel.add(Box.createVerticalGlue());
 
-        summaryArea.setWrapText(true);
+        return panel;
+    }
+
+    private JPanel createRightPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                UIManager.getBorder("Component.border"),
+                new EmptyBorder(18, 18, 18, 18)
+        ));
+
+        JPanel top = new JPanel(new BorderLayout());
+        titleLabel.setFont(titleLabel.getFont().deriveFont(22f));
+        top.add(titleLabel, BorderLayout.WEST);
+
+        summaryArea.setLineWrap(true);
+        summaryArea.setWrapStyleWord(true);
         summaryArea.setEditable(false);
-        summaryArea.setPromptText("Your summary will appear here...");
-        VBox.setVgrow(summaryArea, Priority.ALWAYS);
 
-        Label actionsTitle = new Label("Action Points");
-        actionsTitle.getStyleClass().add("section-title");
-        actionPointsList.setPrefHeight(200);
+        JScrollPane summaryScroll = new JScrollPane(summaryArea);
+        summaryScroll.setBorder(BorderFactory.createTitledBorder("Summary"));
 
-        rightPanel.getChildren().addAll(titleLabel, summaryArea, actionsTitle, actionPointsList);
+        JScrollPane actionsScroll = new JScrollPane(actionPointsList);
+        actionsScroll.setBorder(BorderFactory.createTitledBorder("Action Points"));
+        actionsScroll.setPreferredSize(new Dimension(200, 220));
 
-        HBox content = new HBox(18, leftPanel, rightPanel);
-        HBox.setHgrow(rightPanel, Priority.ALWAYS);
-        root.setCenter(content);
+        panel.add(top, BorderLayout.NORTH);
+        panel.add(summaryScroll, BorderLayout.CENTER);
+        panel.add(actionsScroll, BorderLayout.SOUTH);
 
-        return root;
+        return panel;
     }
 
     private void chooseFile() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Choose MP4 recording");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("MP4 Files", "*.mp4"));
-        File chosen = chooser.showOpenDialog(stage);
-        if (chosen != null) {
-            selectedFile = chosen;
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Choose MP4 recording");
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            selectedFile = chooser.getSelectedFile();
+            if (!selectedFile.getName().toLowerCase().endsWith(".mp4")) {
+                JOptionPane.showMessageDialog(this, "Please select an MP4 file.", "Invalid file", JOptionPane.WARNING_MESSAGE);
+                selectedFile = null;
+                selectedFileLabel.setText("No MP4 selected");
+                return;
+            }
             selectedFileLabel.setText("Selected: " + selectedFile.getAbsolutePath());
             statusLabel.setText("Ready to process");
         }
@@ -123,12 +169,12 @@ public class MainView {
             return;
         }
 
-        progressIndicator.setVisible(true);
+        progressBar.setVisible(true);
         statusLabel.setText("Processing...");
 
-        Task<SummaryResult> task = new Task<>() {
+        SwingWorker<SummaryResult, Void> worker = new SwingWorker<>() {
             @Override
-            protected SummaryResult call() throws Exception {
+            protected SummaryResult doInBackground() throws Exception {
                 RecordingPipeline pipeline = new RecordingPipeline(
                         new VideoAudioExtractor(),
                         new OpenAiTranscriptionService(apiKey),
@@ -136,31 +182,30 @@ public class MainView {
                 );
                 return pipeline.process(Path.of(selectedFile.getAbsolutePath()));
             }
+
+            @Override
+            protected void done() {
+                progressBar.setVisible(false);
+                try {
+                    SummaryResult result = get();
+                    updateResult(result);
+                    statusLabel.setText("Done");
+                } catch (Exception ex) {
+                    statusLabel.setText("Error: " + ex.getMessage());
+                }
+            }
         };
 
-        task.setOnSucceeded(event -> {
-            SummaryResult result = task.getValue();
-            updateResult(result);
-            progressIndicator.setVisible(false);
-            statusLabel.setText("Done");
-        });
-
-        task.setOnFailed(event -> {
-            progressIndicator.setVisible(false);
-            Throwable error = task.getException();
-            statusLabel.setText("Error: " + (error == null ? "Unknown" : error.getMessage()));
-        });
-
-        Thread worker = new Thread(task, "recording-pipeline");
-        worker.setDaemon(true);
-        worker.start();
+        worker.execute();
     }
 
     private void updateResult(SummaryResult result) {
-        Platform.runLater(() -> {
-            titleLabel.setText(result.title());
-            summaryArea.setText(result.summary());
-            actionPointsList.getItems().setAll(result.actionPoints());
-        });
+        titleLabel.setText(result.title());
+        summaryArea.setText(result.summary());
+        actionPointsModel.clear();
+        List<String> actionPoints = result.actionPoints();
+        for (String point : actionPoints) {
+            actionPointsModel.addElement(point);
+        }
     }
 }

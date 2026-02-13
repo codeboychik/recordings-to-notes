@@ -8,7 +8,7 @@ Java desktop app that:
 
 ## Tech stack
 - Java 21
-- JavaFX UI (dark, IDE-inspired style)
+- Swing UI + FlatLaf (dark, IDE-inspired style)
 - Java backend services
 - OpenAI API for transcription + summarization
 
@@ -22,7 +22,7 @@ Java desktop app that:
 
 ## Run
 ```bash
-mvn javafx:run
+mvn exec:java
 ```
 
 ## How it works
@@ -35,10 +35,5 @@ mvn javafx:run
    - action points list.
 
 ## Notes
+- This version intentionally avoids JavaFX runtime requirements.
 - The app calls OpenAI endpoints directly from Java (`HttpClient`).
-- For production, consider adding:
-  - local model fallback,
-  - token streaming,
-  - persistent history,
-  - speaker diarization,
-  - retry/backoff and rate-limit handling.

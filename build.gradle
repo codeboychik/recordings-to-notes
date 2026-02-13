@@ -1,10 +1,9 @@
 plugins {
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
 group = 'com.recordings'
-version = '0.1.0'
+version = '0.2.0'
 
 repositories {
     mavenCentral()
@@ -16,22 +15,18 @@ java {
     }
 }
 
-javafx {
-    version = '21.0.2'
-    modules = ['javafx.controls', 'javafx.graphics']
-}
-
 application {
     mainClass = 'com.recordings.app.MainApp'
 }
 
 dependencies {
+    implementation 'com.formdev:flatlaf:3.5.4'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
 
     testImplementation platform('org.junit:junit-bom:5.11.3')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
-tasks.named('test') {
+test {
     useJUnitPlatform()
 }
